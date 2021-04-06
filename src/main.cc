@@ -6,7 +6,10 @@
 #include <random>
 #include <chrono>
 #include <ctime>
-#include "skiplist.h"
+#include <stdlib.h>
+#include <string.h>
+//#include "skiplist.h"
+#include "rangeskiplist.h"
 void random_array(int* array, int size)
 {
     std::random_device rd; // obtain a random number from hardware
@@ -17,46 +20,42 @@ void random_array(int* array, int size)
         array[n] = distr(gen); // generate numbers
     }
 }
+
+int randomLevel() {
+    int v = 1;
+    while (((double)std::rand() / RAND_MAX) < 0.5 &&
+        v < 16) {
+        v++;
+    }
+    return v;
+}
+
 //==================================================
 int main() {
 
     // 1.Initialize an empty Skip_list object
-    Skip_list s;
-    const int size = 1000*1000;
-    int* array = new int[size];;
+    //Skip_list s;
+    RangeSkiplist rangeList;
+    const int size = 1000 * 1000 * 100;
+    int* array = new int[size];
     random_array(array, size);
     auto start0 = std::chrono::system_clock::now();
     // 2. insert()
-    for (int i = 0; i < size; ++i) {
-        s.Put(i, "v");
+    for (int i = 0; i < 1000 * 1000 * 100; ++i) {
+        //s.Put(i, "v");
+        rangeList.Put(array[i], array[i]);
+        //randomLevel();
     }
     auto end0 = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = end0 - start0;
     time_t end_time = std::chrono::system_clock::to_time_t(end0);
     std::cout << "first finished computation at " << std::ctime(&end_time) << "elapsed time: " << elapsed_seconds.count() << "s\n";
+    //rangeList.Print();
     // 2a. print()
     //s.Print();
-    std::cout << std::endl;
-
-    // 3. find()
-    auto f = s.Get(10);
-    if (f) std::cout << "Node found!\nvalue: " << f << '\n';
-    else std::cout << "Node NOT found!\n";
-
-    // 4. insert() - reassign
-    s.Put(40, "TEST");
-
-    // 4a. print()
-    //s.Print();
-    std::cout << std::endl;
-
-    // 5. erase()
-    s.Erase(40);
-
     // 5a. print();
     //s.Print();
     std::cout << std::endl;
 
     std::cout << "\nDone!\n";
-    getchar();
 }

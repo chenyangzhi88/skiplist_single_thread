@@ -3,17 +3,18 @@
 // constructor
 RangeSkiplist::RangeSkiplist() :
     probability(0.5),
-    maxLevel(16)
+    maxLevel(24)
 {
     int headKey = std::numeric_limits<int>::min();
     int nilKey = std::numeric_limits<int>::max();
     head = new Node(headKey, headKey, maxLevel);
     NIL = new Node(nilKey, nilKey, maxLevel);
-    Node* firstNode = makeNode(headKey+1, nilKey-1, maxLevel);
+    int level = randomLevel();
+    Node* firstNode = makeNode(headKey+1, nilKey-1, level);
 
-    std::fill(head->forward.begin(), head->forward.end(), firstNode);
-    std::fill(firstNode->forward.begin(), firstNode->forward.end(), NIL);
-    firstNode->rangeSkipList = new Skip_list();
+    std::fill(head->forward.begin(), head->forward.begin() + level, firstNode);
+    std::fill( head->forward.begin() + level, head->forward.end(), NIL);
+    std::fill(firstNode->forward.begin(), firstNode->forward.begin() + level, NIL);
 }
 
 RangeSkiplist::~RangeSkiplist() {
@@ -26,7 +27,7 @@ RangeSkiplist::~RangeSkiplist() {
     }
     delete node;
 }
-
+/*
 std::string* RangeSkiplist::Get(int key) const {
     std::string* res{};
     if (auto x = between_bound(key)) {
@@ -34,7 +35,7 @@ std::string* RangeSkiplist::Get(int key) const {
     }
     return res;
 }
-
+*/
 void RangeSkiplist::Print() const {
     Node* list = head->forward[0];
     int lineLenght = 0;
@@ -43,9 +44,12 @@ void RangeSkiplist::Print() const {
 
     while (list != NIL) {
         std::cout << "startKey: " << list->startKey
-            << ", endKey: " << list->endKey
+            << ", endKey: " << list->endKey << ", size: " << list->size
             << ", level: " << nodeLevel(list) << ", node:";
-        list->rangeSkipList->Print();
+        //for(int i = 0; i < list->size; i++) {
+        //    std::cout <<list-> dataArray[i].first << "->";
+        //}
+        std::cout << std::endl;
         list = list->forward[0];
 
         if (list != NIL) std::cout << " : ";
@@ -55,14 +59,17 @@ void RangeSkiplist::Print() const {
     std::cout << "}\n";
 }
 
-void RangeSkiplist::Put(int key, const std::string& value) {
+void RangeSkiplist::Put(int key, int value) {
     if (auto x = between_bound(key)) {
         if (x != NIL) {
-            x->rangeSkipList->Put(key, value);
+            x->Insert(key, value);
+            if(x->size == 1024) {
+                SplitNode(x);
+            }
         }
     }
 }
-
+/*
 void RangeSkiplist::Erase(int key) {
     if (auto x = between_bound(key)) {
         if (x != NIL) {
@@ -70,7 +77,7 @@ void RangeSkiplist::Erase(int key) {
         }
     }
 }
-
+*/
 void RangeSkiplist::EraseNode(Node* node) {
     Node* x = head;
     for (unsigned int i = nodeLevel(head); i-- > 0;) {
@@ -112,7 +119,7 @@ int RangeSkiplist::randomLevel() const {
 }
 
 std::vector<RangeSkiplist::Node*> RangeSkiplist::predecessors(int startKey) const {
-    std::vector<Node*> result(nodeLevel(head),nullptr);
+    std::vector<Node*> result(nodeLevel(head), nullptr);
     Node* x = head;
 
     for (unsigned int i = nodeLevel(head); i-- > 0;) {
@@ -128,16 +135,15 @@ RangeSkiplist::Node* RangeSkiplist::between_bound(int key) const{
     Node* x = head;
 
     for (unsigned int i = nodeLevel(head); i-- > 0;) {
-        while ( x->forward[i]->endKey <= key) {
+        while (x->forward[i] != nullptr && x->forward[i]->startKey <= key) {
             x = x->forward[i];
         }
-        if ( x->forward[i]->startKey >= key && x->forward[i]->endKey > key) {
-            return x->forward[i];
+        if ( x->startKey <= key && x->endKey > key) {
+            return x;
         }
     }
-    return x->forward[0];
 }
-
+/*
 void RangeSkiplist::Split(Node* node) {
     int count = node->size / 2;
     Skip_list* skipList = node->rangeSkipList;
@@ -154,6 +160,17 @@ void RangeSkiplist::Split(Node* node) {
     InsertNode(leftNode);
     InsertNode(rightNode);
 }
+*/
+void RangeSkiplist::SplitNode(Node* node) {
+    int midKey = node->MidKey();
+    int rightLevel = randomLevel();
+    Node* rightNode = makeNode(midKey, node->endKey, rightLevel);
+    Node* leftNode = node;
+    node->Split(rightNode);
+    InsertNode(rightNode);
+    leftNode->endKey = midKey;
+}
+
 /*
 RangeSkiplist::Merge() {
     //delete a node and iterate the deleted node element to put another node
