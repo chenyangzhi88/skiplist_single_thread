@@ -45,8 +45,11 @@ void RangeSkiplist::Print() const {
     while (list != NIL) {
         std::cout << "startKey: " << list->startKey
             << ", endKey: " << list->endKey << ", size: " << list->size
-            << ", level: " << nodeLevel(list) << ", node:";
+            << ", level: " << nodeLevel(list) << ", node:"<<std::endl;
         //list->rangeSkipList->Print();
+	for(int i=0; i < list->size; i++) {
+	    std::cout << list->dataArray[i].first << "->";
+	}
         std::cout << std::endl;
         list = list->forward[0];
 
@@ -61,13 +64,14 @@ void RangeSkiplist::Put(int key, int value) {
     if (auto x = between_bound(key)) {
         if (x != NIL) {
             auto start0 = std::chrono::system_clock::now();
-            x->rangeSkipList->Put(key, value);
+            //x->rangeSkipList->Put(key, value);
+	    x->Insert(key, value);
             auto end0 = std::chrono::system_clock::now();
 	    std::chrono::duration<double> elapsed_seconds = end0 - start0;
 	    ns_count += elapsed_seconds.count();
             x->size++;
             if(x->size == 1000) {
-                Split(x);
+                SplitNode(x);
             }
         }
     }

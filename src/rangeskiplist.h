@@ -61,14 +61,14 @@ private:
         Node(int startKey, int endKey, int level):
             startKey(startKey), endKey(endKey), forward(level, nullptr)
         {
-            //dataArray = new Item[1024];
-            rangeSkipList = new Skip_list();
+            dataArray = new Item[1000];
+            //rangeSkipList = new Skip_list();
         }
         void Insert(int key, int value) {
             Item v = Item(key, value);
-            //auto it = upper_bound(dataArray, dataArray + size, v);
-            //memmove(it + 1, it, (size - (it - dataArray)) * sizeof(Item));
-            //*it = v;
+            auto it = upper_bound(dataArray, dataArray + size, v);
+            memmove(it + 1, it, (size - (it - dataArray)) * sizeof(Item));
+            *it = v;
             size ++;
         }
         void Split(Node* rightNode) {

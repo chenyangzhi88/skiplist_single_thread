@@ -39,22 +39,18 @@ int main() {
     const int size = 1000 * 1000;
     int* array = new int[size];
     random_array(array, size);
-    for (int i = 0; i < size; ++i) {
-        //s.Put(array[i], array[i]);
-        rangeList.Put(array[i], array[i]);
-    }
     auto start0 = std::chrono::system_clock::now();
     // 2. insert()
     for (int i = 0; i < size; ++i) {
-        //s.Get(array[i]);
-        rangeList.Get(array[i]);
+        //s.Put(array[i], array[i]);
+        rangeList.Put(array[i], array[i]);
     }
     auto end0 = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = end0 - start0;
     time_t end_time = std::chrono::system_clock::to_time_t(end0);
     std::cout << "first finished computation at " << std::ctime(&end_time) << "elapsed time: " << elapsed_seconds.count() << "s\n";
     std::cout << "put elapse time" << rangeList.ns_count << "s\n";
-    //srangeList.Print();
+    //rangeList.Print();
     // 2a. print()
     //s.Print();
     // 5a. print();
