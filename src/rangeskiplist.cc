@@ -1,4 +1,6 @@
 #include "rangeskiplist.h"
+#include <chrono>
+#include <ctime>
 // Struct RangeSkipnode member implementations
 // constructor
 RangeSkiplist::RangeSkiplist() :
@@ -22,20 +24,18 @@ RangeSkiplist::~RangeSkiplist() {
     while (node->forward[0]) {
         auto tmp = node;
         node = node->forward[0];
-        delete tmp->rangeSkipList;
-        delete tmp;
+        //delete tmp->rangeSkipList;
+        //delete tmp;
     }
     delete node;
 }
-/*
-std::string* RangeSkiplist::Get(int key) const {
-    std::string* res{};
+int RangeSkiplist::Get(int key) const {
+    int res;
     if (auto x = between_bound(key)) {
         res = x->rangeSkipList->Get(key);
     }
     return res;
 }
-*/
 void RangeSkiplist::Print() const {
     Node* list = head->forward[0];
     int lineLenght = 0;
@@ -46,9 +46,7 @@ void RangeSkiplist::Print() const {
         std::cout << "startKey: " << list->startKey
             << ", endKey: " << list->endKey << ", size: " << list->size
             << ", level: " << nodeLevel(list) << ", node:";
-        //for(int i = 0; i < list->size; i++) {
-        //    std::cout <<list-> dataArray[i].first << "->";
-        //}
+        //list->rangeSkipList->Print();
         std::cout << std::endl;
         list = list->forward[0];
 
@@ -58,13 +56,18 @@ void RangeSkiplist::Print() const {
     }
     std::cout << "}\n";
 }
-
+double RangeSkiplist::ns_count = 0.0;
 void RangeSkiplist::Put(int key, int value) {
     if (auto x = between_bound(key)) {
         if (x != NIL) {
-            x->Insert(key, value);
-            if(x->size == 1024) {
-                SplitNode(x);
+            auto start0 = std::chrono::system_clock::now();
+            x->rangeSkipList->Put(key, value);
+            auto end0 = std::chrono::system_clock::now();
+	    std::chrono::duration<double> elapsed_seconds = end0 - start0;
+	    ns_count += elapsed_seconds.count();
+            x->size++;
+            if(x->size == 1000) {
+                Split(x);
             }
         }
     }
@@ -142,25 +145,24 @@ RangeSkiplist::Node* RangeSkiplist::between_bound(int key) const{
             return x;
         }
     }
+    return nullptr;
 }
-/*
+
 void RangeSkiplist::Split(Node* node) {
     int count = node->size / 2;
     Skip_list* skipList = node->rangeSkipList;
     Skip_list* rightList = new Skip_list();
-    int midKey = skipList->numberthKey(count);
+    int midKey = skipList->numberthKey(count+1);
     skipList->Split(midKey, rightList);
-    int leftLevel = randomLevel();
     int rightLevel = randomLevel();
-    Node* leftNode = makeNode(node->startKey, midKey, leftLevel);
     Node* rightNode = makeNode(midKey, node->endKey, rightLevel);
-    leftNode->rangeSkipList = skipList;
+    node->endKey = midKey;
     rightNode->rangeSkipList = rightList;
-    EraseNode(node);
-    InsertNode(leftNode);
+    rightNode->size = node->size - count;
+    node->size = count;
     InsertNode(rightNode);
 }
-*/
+
 void RangeSkiplist::SplitNode(Node* node) {
     int midKey = node->MidKey();
     int rightLevel = randomLevel();

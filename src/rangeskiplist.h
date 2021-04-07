@@ -2,6 +2,8 @@
 #include<string.h>
 #include "skiplist.h"
 #include <map>
+#include <ctime>
+#include <chrono>
 typedef std::pair<int, int> Item;
 class RangeSkiplist {
 public:
@@ -24,7 +26,7 @@ public:
     to the searchKey; otherwise it returns
     failure, in the form of null pointer.
     */
-    //std::string* Get(int key) const;
+    int Get(int key) const;
 
     // modifying member functions
 
@@ -44,7 +46,7 @@ public:
     //void Erase(int searchKey);
 
     //void Merge();
-
+    static double ns_count;
 private:
 
     struct Node {
@@ -59,7 +61,7 @@ private:
         Node(int startKey, int endKey, int level):
             startKey(startKey), endKey(endKey), forward(level, nullptr)
         {
-            dataArray = new Item[1024];
+            //dataArray = new Item[1024];
             rangeSkipList = new Skip_list();
         }
         void Insert(int key, int value) {

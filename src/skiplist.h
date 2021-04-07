@@ -25,7 +25,7 @@ public:
     to the searchKey; otherwise it returns
     failure, in the form of null pointer.
     */
-    std::string* Get(int key) const;
+    int Get(int key) const;
 
     // modifying member functions
 
@@ -36,7 +36,7 @@ public:
     newValue, otherwise it creates and splices
     a new node, of random level.
     */
-    void Put(int key, const std::string& value);
+    void Put(int key, int value);
 
     /*
     It deletes the element containing
@@ -46,15 +46,14 @@ public:
     void Split(int midKey, Skip_list* rightList);
     int numberthKey(int nth);
 private:
-
     struct Node {
         int key;
-        std::string value;
+        int value;
 
         // pointers to successor nodes
         std::vector<Node*> forward;
 
-        Node(int k, const std::string& v, int level):
+        Node(int k, int v, int level):
             key(k), value(v),forward(level, nullptr)
         {}
     };
@@ -64,9 +63,9 @@ private:
 
     //Returns number of incoming and outgoing pointers
     static int nodeLevel(const Node* v);
-
+    static Node* ShareNil(int level);
     //creates a node on the heap and returns a pointer to it.
-    static Node* makeNode(int key, std::string val, int level);
+    static Node* makeNode(int key, int val, int level);
 
     // Returns the first node for which node->key < searchKey is false
     Node* lower_bound(int key) const ;

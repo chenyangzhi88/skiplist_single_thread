@@ -2,13 +2,11 @@
 
 Skip_list::Skip_list() :
     probability(0.5),
-    maxLevel(16)
+    maxLevel(24)
 {
     int headKey = std::numeric_limits<int>::min();
-    head = new Node(headKey, "head", maxLevel);
-
-    int nilKey = std::numeric_limits<int>::max();
-    NIL = new Node(nilKey, "NIL", maxLevel);
+    head = new Node(headKey, headKey, maxLevel);
+    NIL = ShareNil(maxLevel);
 
     std::fill(head->forward.begin(), head->forward.end(), NIL);
 }
@@ -23,14 +21,23 @@ Skip_list::~Skip_list() {
     delete node;
 }
 
-std::string* Skip_list::Get(int key) const {
-    std::string* res{};
+int Skip_list::Get(int key) const {
+    int res;
     if (auto x = lower_bound(key)) {
         if (x->key == key && x != NIL) {
-            res = &(x->value);
+            res = x->value;
         }
     }
     return res;
+}
+
+Skip_list::Node* Skip_list::ShareNil(int level) {
+    static Node* shareNil;
+    if (shareNil == nullptr) {
+        int nilKey = std::numeric_limits<int>::max();
+        shareNil = new Node(nilKey, nilKey, level);
+    }
+    return shareNil;
 }
 
 void Skip_list::Print() const {
@@ -53,7 +60,7 @@ void Skip_list::Print() const {
     std::cout << "}\n";
 }
 
-void Skip_list::Put(int key, const std::string& value) {
+void Skip_list::Put(int key, int value) {
     auto preds = predecessors(key);
 
     {//reassign value if node exists and return
@@ -97,7 +104,7 @@ int Skip_list::nodeLevel(const Node* v) {
     return v->forward.size();
 }
 
-Skip_list::Node* Skip_list::makeNode(int key, std::string val, int level)  {
+Skip_list::Node* Skip_list::makeNode(int key, int val, int level)  {
     return new Node(key, val, level);
 }
 
@@ -122,11 +129,13 @@ Skip_list::Node* Skip_list::lower_bound(int key) const{
 }
 
 std::vector<Skip_list::Node*> Skip_list::predecessors(int key) const {
+    static int count = 0;
     std::vector<Node*> result(nodeLevel(head),nullptr);
     Node* x = head;
 
     for (unsigned int i = nodeLevel(head); i-- > 0;) {
         while (x->forward[i]->key < key) {
+            count++;
             x = x->forward[i];
         }
         result[i] = x;
@@ -137,23 +146,15 @@ std::vector<Skip_list::Node*> Skip_list::predecessors(int key) const {
 void Skip_list::Split(int key, Skip_list* rightList) {
     auto preds = predecessors(key);
 
-    // create new node
-    int nilKey = std::numeric_limits<int>::max();
-    NIL = new Node(nilKey, "NIL", maxLevel);
-    int headKey = std::numeric_limits<int>::min();
-    head = new Node(headKey, "head", maxLevel);
+    //for rightNode
+    for (int i = 0; i < maxLevel; ++i) {
+        rightList->head->forward[i] = preds[i]->forward[i];
+    }
     //for leftNode
     // connect pointers of predecessors and new node to respective successors
     for (int i = 0; i < maxLevel; ++i) {
         preds[i]->forward[i] = NIL;
     }
-    rightList->NIL = this->NIL;
-    this->NIL = NIL;
-    //for rightNode
-    for (int i = 0; i < maxLevel; ++i) {
-        head->forward[i] = preds[i]->forward[i];
-    }
-    rightList->head = head;
 }
 
 int Skip_list::numberthKey(int nth) {
@@ -161,6 +162,7 @@ int Skip_list::numberthKey(int nth) {
     int size = 0;
     while (list != NIL && size != nth) {
         list = list->forward[0];
+        size++;
     }
     return list->key;
 }
