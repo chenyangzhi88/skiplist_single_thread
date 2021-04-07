@@ -47,9 +47,9 @@ void RangeSkiplist::Print() const {
             << ", endKey: " << list->endKey << ", size: " << list->size
             << ", level: " << nodeLevel(list) << ", node:"<<std::endl;
         //list->rangeSkipList->Print();
-	for(int i=0; i < list->size; i++) {
-	    std::cout << list->dataArray[i].first << "->";
-	}
+	    //for(int i=0; i < list->size; i++) {
+	        //std::cout << list->dataArray[i].first << "->";
+	    //}
         std::cout << std::endl;
         list = list->forward[0];
 
@@ -60,18 +60,30 @@ void RangeSkiplist::Print() const {
     std::cout << "}\n";
 }
 double RangeSkiplist::ns_count = 0.0;
+double RangeSkiplist::split_count = 0.0;
+double RangeSkiplist::range_count = 0.0;
 void RangeSkiplist::Put(int key, int value) {
-    if (auto x = between_bound(key)) {
+    auto start0 = std::chrono::system_clock::now();
+    auto x = between_bound(key);
+    auto end0 = std::chrono::system_clock::now();
+	std::chrono::duration<double> elapsed_seconds = end0 - start0;
+	range_count += elapsed_seconds.count();
+    if(x) {
         if (x != NIL) {
             auto start0 = std::chrono::system_clock::now();
-            //x->rangeSkipList->Put(key, value);
-	    x->Insert(key, value);
+            x->rangeSkipList->Put(key, value);
+	        //x->Insert(key, value);
+            //x->MapInsert(key, value);
             auto end0 = std::chrono::system_clock::now();
-	    std::chrono::duration<double> elapsed_seconds = end0 - start0;
-	    ns_count += elapsed_seconds.count();
+	        std::chrono::duration<double> elapsed_seconds = end0 - start0;
+	        ns_count += elapsed_seconds.count();
             x->size++;
-            if(x->size == 1000) {
-                SplitNode(x);
+            if(x->size == ARRAYSIZE) {
+                auto start0 = std::chrono::system_clock::now();
+                Split(x);
+                auto end0 = std::chrono::system_clock::now();
+	            std::chrono::duration<double> elapsed_seconds = end0 - start0;
+	            split_count += elapsed_seconds.count();
             }
         }
     }
@@ -142,11 +154,11 @@ RangeSkiplist::Node* RangeSkiplist::between_bound(int key) const{
     Node* x = head;
 
     for (unsigned int i = nodeLevel(head); i-- > 0;) {
-        while (x->forward[i] != nullptr && x->forward[i]->startKey <= key) {
+        while (x->forward[i]->startKey <= key) {
             x = x->forward[i];
-        }
-        if ( x->startKey <= key && x->endKey > key) {
-            return x;
+            if (x->endKey > key) {
+                return x;
+            }
         }
     }
     return nullptr;
@@ -177,6 +189,14 @@ void RangeSkiplist::SplitNode(Node* node) {
     leftNode->endKey = midKey;
 }
 
+void RangeSkiplist::SplitMap(Node* node) {
+    int rightLevel = randomLevel();
+    int midKey = 0;
+    Node* rightNode = makeNode(midKey, node->endKey, rightLevel);
+    Node* leftNode = node;
+    node->SplitMap(rightNode);
+    InsertNode(rightNode);
+}
 /*
 RangeSkiplist::Merge() {
     //delete a node and iterate the deleted node element to put another node

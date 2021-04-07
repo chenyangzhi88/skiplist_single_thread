@@ -36,20 +36,36 @@ int main() {
     // 1.Initialize an empty Skip_list object
     Skip_list s;
     RangeSkiplist rangeList;
-    const int size = 1000 * 1000;
+    const int size = 1000 * 1000 * 10;
     int* array = new int[size];
     random_array(array, size);
+    std::map<int, int> testmap;
     auto start0 = std::chrono::system_clock::now();
     // 2. insert()
     for (int i = 0; i < size; ++i) {
         //s.Put(array[i], array[i]);
         rangeList.Put(array[i], array[i]);
+        //testmap.insert(std::pair<int,int>(array[i],array[i]));
     }
     auto end0 = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed_seconds = end0 - start0;
     time_t end_time = std::chrono::system_clock::to_time_t(end0);
     std::cout << "first finished computation at " << std::ctime(&end_time) << "elapsed time: " << elapsed_seconds.count() << "s\n";
     std::cout << "put elapse time" << rangeList.ns_count << "s\n";
+    std::cout << "split elapse time" << rangeList.split_count << "s\n";
+    std::cout << "range elapse time" << rangeList.range_count << "s\n";
+    {
+        auto start0 = std::chrono::system_clock::now();
+        // 2. insert()
+        for (int i = 0; i < size; ++i) {
+            //s.Put(array[i], array[i]);
+            rangeList.Get(array[i]);
+        }
+        auto end0 = std::chrono::system_clock::now();
+        std::chrono::duration<double> elapsed_seconds = end0 - start0;
+        time_t end_time = std::chrono::system_clock::to_time_t(end0);
+        std::cout << "first finished computation at " << std::ctime(&end_time) << "elapsed time: " << elapsed_seconds.count() << "s\n";
+    }
     //rangeList.Print();
     // 2a. print()
     //s.Print();

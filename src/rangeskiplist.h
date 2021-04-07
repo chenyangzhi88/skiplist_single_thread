@@ -5,6 +5,7 @@
 #include <ctime>
 #include <chrono>
 typedef std::pair<int, int> Item;
+#define ARRAYSIZE 8096
 class RangeSkiplist {
 public:
     RangeSkiplist();
@@ -47,6 +48,8 @@ public:
 
     //void Merge();
     static double ns_count;
+    static double split_count;
+    static double range_count;
 private:
 
     struct Node {
@@ -54,6 +57,7 @@ private:
         int endKey;
         Skip_list* rangeSkipList;
         Item* dataArray;
+        std::map<int, int> childNode;
         int size;
         // pointers to successor nodes
         std::vector<Node*> forward;
@@ -61,15 +65,30 @@ private:
         Node(int startKey, int endKey, int level):
             startKey(startKey), endKey(endKey), forward(level, nullptr)
         {
-            dataArray = new Item[1000];
-            //rangeSkipList = new Skip_list();
+            //dataArray = new Item[ARRAYSIZE];
+            rangeSkipList = new Skip_list();
         }
         void Insert(int key, int value) {
             Item v = Item(key, value);
             auto it = upper_bound(dataArray, dataArray + size, v);
-            memmove(it + 1, it, (size - (it - dataArray)) * sizeof(Item));
+            RightShift(it, size - (it - dataArray));
             *it = v;
-            size ++;
+        }
+        void MapInsert(int key, int value) {
+            childNode.insert(std::pair<int, int>(key, value));
+        }
+        void SplitMap(Node* rightNode) {
+            std::map<int, int> tmp = childNode;
+            int middleKey = 0, middle = 0;
+            for (auto it = childNode.begin(); middle < childNode.size()/2; middle++) {
+                rightNode->MapInsert(it->first, it->second);
+                middleKey = it->first;
+                childNode.erase(it++);
+            }
+            childNode = rightNode->childNode;
+            rightNode->childNode = tmp;
+            rightNode->startKey = middleKey;
+            endKey = middleKey;
         }
         void Split(Node* rightNode) {
             int mid = size >> 1;
@@ -81,12 +100,18 @@ private:
         int MidKey() {
             return dataArray[size >> 1].first;
         }
+        void RightShift(Item* it, int count) {
+            for(int i = count - 1; i >= 0; i--) {
+                it[i+1] = it[i];
+            }
+        }
     };
 
     // Generates node levels in the range [1, maxLevel).
     int randomLevel() const;
     void Split(Node* node);
     void SplitNode(Node* node);
+    void SplitMap(Node* node);
     void EraseNode(Node* node);
     void InsertNode(Node* node);
     //Returns number of incoming and outgoing pointers
