@@ -36,7 +36,7 @@ int main() {
     // 1.Initialize an empty Skip_list object
     Skip_list s;
     RangeSkiplist rangeList;
-    const int size = 1000 * 1000 * 10;
+    const int size = 1000 * 1000 * 100;
     int* array = new int[size];
     random_array(array, size);
     std::map<int, int> testmap;

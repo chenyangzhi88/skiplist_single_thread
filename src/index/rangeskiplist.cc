@@ -29,13 +29,28 @@ RangeSkiplist::~RangeSkiplist() {
     }
     delete node;
 }
+
 int RangeSkiplist::Get(int key) const {
     int res;
     if (auto x = between_bound(key)) {
-        res = x->rangeSkipList->Get(key);
+        res = x->childNode.find(key)->second;
     }
     return res;
 }
+
+void RangeSkiplist::GetRanges(std::vector<int> keys, std::vector<Range>* rangs) {
+    for (auto it = keys.begin(); it != keys.end(); it++) {
+        if(auto x = between_bound(key)) {
+            Range r = Range(x.startKey, x.endKey);
+            r.node = x->rangeSkipList;
+            ranges->push_back(r);
+        } else {
+            rangs->push_back(Range(min, max, nullptr));
+        }
+    }
+    return;
+}
+
 void RangeSkiplist::Print() const {
     Node* list = head->forward[0];
     int lineLenght = 0;
@@ -50,6 +65,9 @@ void RangeSkiplist::Print() const {
 	    //for(int i=0; i < list->size; i++) {
 	        //std::cout << list->dataArray[i].first << "->";
 	    //}
+        //for(auto it = list->childNode.begin(); it != list->childNode.end(); it++) {
+        //    std::cout << it->first << "->";
+        //}
         std::cout << std::endl;
         list = list->forward[0];
 
@@ -71,16 +89,18 @@ void RangeSkiplist::Put(int key, int value) {
     if(x) {
         if (x != NIL) {
             auto start0 = std::chrono::system_clock::now();
-            x->rangeSkipList->Put(key, value);
+            //x->rangeSkipList->Put(key, value);
 	        //x->Insert(key, value);
-            //x->MapInsert(key, value);
+            if (x->MapInsert(key, value)) {
+                x->size++;
+            }
             auto end0 = std::chrono::system_clock::now();
 	        std::chrono::duration<double> elapsed_seconds = end0 - start0;
 	        ns_count += elapsed_seconds.count();
-            x->size++;
             if(x->size == ARRAYSIZE) {
                 auto start0 = std::chrono::system_clock::now();
-                Split(x);
+                //Split(x);
+                SplitMap(x);
                 auto end0 = std::chrono::system_clock::now();
 	            std::chrono::duration<double> elapsed_seconds = end0 - start0;
 	            split_count += elapsed_seconds.count();

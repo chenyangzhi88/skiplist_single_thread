@@ -2,6 +2,7 @@
 #include<string.h>
 #include "skiplist.h"
 #include <map>
+#include "btree/map.h"
 #include <ctime>
 #include <chrono>
 typedef std::pair<int, int> Item;
@@ -57,7 +58,8 @@ private:
         int endKey;
         Skip_list* rangeSkipList;
         Item* dataArray;
-        std::map<int, int> childNode;
+        //std::map<int, int> childNode;
+        btree::map<int,int> childNode;
         int size;
         // pointers to successor nodes
         std::vector<Node*> forward;
@@ -66,7 +68,7 @@ private:
             startKey(startKey), endKey(endKey), forward(level, nullptr)
         {
             //dataArray = new Item[ARRAYSIZE];
-            rangeSkipList = new Skip_list();
+            //rangeSkipList = new Skip_list();
         }
         void Insert(int key, int value) {
             Item v = Item(key, value);
@@ -74,20 +76,29 @@ private:
             RightShift(it, size - (it - dataArray));
             *it = v;
         }
-        void MapInsert(int key, int value) {
-            childNode.insert(std::pair<int, int>(key, value));
+        bool MapInsert(int key, int value) {
+            std::pair<btree::map<int,int>::iterator,bool> ret;
+            ret = childNode.insert(std::pair<int, int>(key, value));
+            return ret.second;
         }
         void SplitMap(Node* rightNode) {
-            std::map<int, int> tmp = childNode;
+            btree::map<int, int> tmp1;
+            btree::map<int, int> tmp2;
             int middleKey = 0, middle = 0;
-            for (auto it = childNode.begin(); middle < childNode.size()/2; middle++) {
-                rightNode->MapInsert(it->first, it->second);
+            int midNumth = childNode.size()/2;
+            auto it = childNode.begin();
+            for (; middle < midNumth; middle++, it++) {
+                tmp1.insert(std::pair<int, int>(it->first, it->second));
                 middleKey = it->first;
-                childNode.erase(it++);
             }
-            childNode = rightNode->childNode;
-            rightNode->childNode = tmp;
+            for( ; it != childNode.end(); it++) {
+                tmp2.insert(std::pair<int, int>(it->first, it->second));
+            }
+            childNode = tmp1;
+            this->size = childNode.size();
+            rightNode->childNode = tmp2;
             rightNode->startKey = middleKey;
+            rightNode->size = rightNode->childNode.size() ;
             endKey = middleKey;
         }
         void Split(Node* rightNode) {
